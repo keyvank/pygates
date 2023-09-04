@@ -35,3 +35,23 @@ class Equals8:
             eq.update()
         for a in self.ands:
             a.update()
+
+
+class Equals3:
+    def __init__(self, wires_a, wires_b, wire_out):
+        self.eqs = []
+        eq_outs = []
+        for i in range(3):
+            eq_out = Wire()
+            self.eqs.append(Equals(wires_a[i], wires_b[i], eq_out))
+            eq_outs.append(eq_out)
+
+        inter = Wire()
+        self.and1 = And(eq_outs[0], eq_outs[1], inter)
+        self.and2 = And(inter, eq_outs[2], wire_out)
+
+    def update(self):
+        for eq in self.eqs:
+            eq.update()
+        self.and1.update()
+        self.and2.update()
