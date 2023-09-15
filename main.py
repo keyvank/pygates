@@ -108,7 +108,7 @@ class Circuit:
         )
 
         # Pre-fill memory
-        self.rom.fill([2, 2, 2, 2, 2, 2, 2, 3, 4 + (7 << 3)] + [0 for i in range(248)])
+        self.rom.fill(compile(">+>+>+>+>+>+>+>+>+>+>+[<]+"))
 
     def update(self):
         self.pc.update()
@@ -135,6 +135,27 @@ class Circuit:
         self.mem_inc_gate.update()
         self.mem_dec_gate.update()
         self.mem_inter_calc.update()
+
+
+def compile(bf):
+    opcodes = []
+    locs = []
+
+    for c in bf:
+        if c == ">":
+            opcodes.append(0)
+        elif c == "<":
+            opcodes.append(1)
+        elif c == "+":
+            opcodes.append(2)
+        elif c == "-":
+            opcodes.append(3)
+        elif c == "[":
+            locs.append(len(opcodes))
+        elif c == "]":
+            opcodes.append(4 + (locs.pop() << 3))
+
+    return opcodes + [0 for _ in range(256 - len(opcodes))]
 
 
 if __name__ == "__main__":
