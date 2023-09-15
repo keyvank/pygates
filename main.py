@@ -81,8 +81,8 @@ class Circuit:
 
         self.pc = Reg8(wire_clk, pc_next, pc_out)
         self.p = Reg8(wire_clk, p_next, p_out)
-        self.rom = RAM(Wire.zero(), pc_out, zero, instruction)
-        self.ram = RAM(is_wr, p_out, data_next, data)
+        self.rom = RAM(wire_clk, Wire.zero(), pc_out, zero, instruction)
+        self.ram = RAM(wire_clk, is_wr, p_out, data_next, data)
 
         self.is_fwd_check = Equals3(
             instruction[0:3], [Wire.zero(), Wire.zero(), Wire.zero()], is_fwd
@@ -101,7 +101,7 @@ class Circuit:
         )
 
         # Pre-fill memory
-        self.rom.fill([0, 0, 1, 0, 1, 1, 1, 1, 0, 1] + [3 for i in range(250)])
+        self.rom.fill([(i % 2) * 2 if i > 10 else (i % 2) * 3 for i in range(256)])
 
     def update(self):
         self.pc.update()
@@ -121,6 +121,9 @@ class Circuit:
         self.p_inter_calc.update()
         self.p_calc.update()
         self.is_wr_gate.update()
+        self.mem_inc_gate.update()
+        self.mem_dec_gate.update()
+        self.mem_inter_calc.update()
 
 
 if __name__ == "__main__":

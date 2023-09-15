@@ -1,5 +1,6 @@
 from wire import *
 from mux import *
+from cmp import *
 
 
 class DLatch:
@@ -56,22 +57,37 @@ class RAM:
                     self.regs[i].latches[j]._data = ONE
                 curr //= 2
 
-    def __init__(self, wire_write, wires_addr, wires_data, wires_out):
+    def __init__(self, wire_clk, wire_write, wires_addr, wires_data, wires_out):
         self.regs = []
+        self.sel_gates = []
         regs_outs = [list() for _ in range(8)]
         for byte in range(256):
             wires = []
+            cell_addr = []
             for bit in range(8):
                 w = Wire()
                 wires.append(w)
                 regs_outs[bit].append(w)
-            self.regs.append(Reg8(Wire.zero(), wires_data, wires))
+                if byte % 2 == 0:
+                    cell_addr.append(Wire.zero())
+                else:
+                    cell_addr.append(Wire.one())
+                byte //= 2
+            is_sel = Wire()
+            is_wr = Wire()
+            is_wr_clk = Wire()
+            self.sel_gates.append(Equals8(wires_addr, cell_addr, is_sel))
+            self.sel_gates.append(And(is_sel, wire_write, is_wr))
+            self.sel_gates.append(And(is_wr, wire_clk, is_wr_clk))
+            self.regs.append(Reg8(is_wr_clk, wires_data, wires))
 
         self.muxes = []
         for i in range(8):
             self.muxes.append(Mux8x256(wires_addr, regs_outs[i], wires_out[i]))
 
     def update(self):
+        for sel in self.sel_gates:
+            sel.update()
         for reg in self.regs:
             reg.update()
         for mux in self.muxes:
