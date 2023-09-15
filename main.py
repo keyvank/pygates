@@ -28,6 +28,7 @@ class Circuit:
     def snapshot(self):
         print("P:", self.p.snapshot())
         print("PC:", self.pc.snapshot())
+        print("RAM:", self.ram.snapshot())
 
     def __init__(self, wire_clk, wires_out):
         zero = [Wire.zero()] * 8
@@ -44,8 +45,13 @@ class Circuit:
         self.p_inc_gate = Adder8(p_out, one, Wire.zero(), p_inc, Wire())
         self.p_dec_gate = Adder8(p_out, min_one, Wire.zero(), p_dec, Wire())
 
-        instruction = [Wire() for _ in range(8)]
         data = [Wire() for _ in range(8)]
+        data_inc = [Wire() for _ in range(8)]
+        data_dec = [Wire() for _ in range(8)]
+        self.mem_inc_gate = Adder8(data, one, Wire.zero(), data_inc, Wire())
+        self.mem_dec_gate = Adder8(data, min_one, Wire.zero(), data_dec, Wire())
+
+        instruction = [Wire() for _ in range(8)]
 
         is_fwd = Wire()
         is_bwd = Wire()
@@ -67,10 +73,16 @@ class Circuit:
         self.p_inter_calc = Mux1x2Byte(is_bwd, p_inc, p_dec, p_inter)
         self.p_calc = Mux1x2Byte(is_fwd_bwd, p_out, p_inter, p_next)
 
+        is_wr = Wire()
+        self.is_wr_gate = Or(is_inc, is_dec, is_wr)
+
+        data_next = [Wire() for _ in range(8)]
+        self.mem_inter_calc = Mux1x2Byte(is_dec, data_inc, data_dec, data_next)
+
         self.pc = Reg8(wire_clk, pc_next, pc_out)
         self.p = Reg8(wire_clk, p_next, p_out)
         self.rom = RAM(Wire.zero(), pc_out, zero, instruction)
-        self.ram = RAM(Wire.zero(), p_out, zero, data)
+        self.ram = RAM(is_wr, p_out, data_next, data)
 
         self.is_fwd_check = Equals3(
             instruction[0:3], [Wire.zero(), Wire.zero(), Wire.zero()], is_fwd
@@ -108,6 +120,7 @@ class Circuit:
         self.is_fwd_bwd_gate.update()
         self.p_inter_calc.update()
         self.p_calc.update()
+        self.is_wr_gate.update()
 
 
 if __name__ == "__main__":
@@ -123,7 +136,6 @@ if __name__ == "__main__":
         else:
             clk.put(BATTERY, ZERO)
         circuit.update()
-        time.sleep(0.05)
 
         circuit.snapshot()
         clk_val = not clk_val
