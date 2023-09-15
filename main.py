@@ -48,8 +48,12 @@ class Circuit:
         data = [Wire() for _ in range(8)]
         data_inc = [Wire() for _ in range(8)]
         data_dec = [Wire() for _ in range(8)]
+        is_data_zero = Wire()
+        is_data_not_zero = Wire()
         self.mem_inc_gate = Adder8(data, one, Wire.zero(), data_inc, Wire())
         self.mem_dec_gate = Adder8(data, min_one, Wire.zero(), data_dec, Wire())
+        self.is_data_zero_gate = Equals8(data, zero, is_data_zero)
+        self.is_data_not_zero_gate = Not(is_data_zero, is_data_not_zero)
 
         instruction = [Wire() for _ in range(8)]
 
@@ -62,8 +66,11 @@ class Circuit:
         pc_next = [Wire() for _ in range(8)]
         p_next = [Wire() for _ in range(8)]
 
+        is_jmp_not_zero = Wire()
+        self.is_jmp_not_zero_gate = And(is_jmp, is_data_not_zero, is_jmp_not_zero)
+
         self.pc_calc = Mux1x2Byte(
-            is_jmp, pc_inc, [Wire.zero()] * 3 + instruction[3:8], pc_next
+            is_jmp_not_zero, pc_inc, instruction[3:8] + [Wire.zero()] * 3, pc_next
         )
 
         p_inter = [Wire() for _ in range(8)]
@@ -101,7 +108,7 @@ class Circuit:
         )
 
         # Pre-fill memory
-        self.rom.fill([(i % 2) * 2 if i > 10 else (i % 2) * 3 for i in range(256)])
+        self.rom.fill([2, 2, 2, 2, 2, 2, 2, 3, 4 + (7 << 3)] + [0 for i in range(248)])
 
     def update(self):
         self.pc.update()
@@ -116,10 +123,14 @@ class Circuit:
         self.is_inc_check.update()
         self.is_dec_check.update()
         self.is_jmp_check.update()
-        self.pc_calc.update()
+
         self.is_fwd_bwd_gate.update()
         self.p_inter_calc.update()
         self.p_calc.update()
+        self.is_data_zero_gate.update()
+        self.is_data_not_zero_gate.update()
+        self.is_jmp_not_zero_gate.update()
+        self.pc_calc.update()
         self.is_wr_gate.update()
         self.mem_inc_gate.update()
         self.mem_dec_gate.update()
