@@ -1,6 +1,8 @@
-# The Super Programmer's Processor
+# PyGates
 
-A Von-Neumann Brainfuck CPU
+Trying to understand how computers work at the transistor level in a Python simulation.
+
+A Von-Neumann Brainfuck CPU:
 
 ```
 FWD
