@@ -30,18 +30,9 @@ class Circuit:
         print("PC:", self.pc.snapshot())
 
     def __init__(self, wire_clk, wires_out):
-        data = [Wire.zero()] * 8
+        zero = [Wire.zero()] * 8
         one = [Wire.one()] + [Wire.zero()] * 7
         min_one = [Wire.one()] * 8
-
-        a_output = [Wire() for _ in range(8)]
-        self.reg_a = Reg8(Wire.zero(), data, a_output)
-
-        b_output = [Wire() for _ in range(8)]
-        self.reg_b = Reg8(Wire.zero(), data, b_output)
-
-        a_plus_b_out = [Wire() for _ in range(8)]
-        self.a_plus_b = Adder8(a_output, b_output, Wire.zero(), a_plus_b_out, Wire())
 
         pc_out = [Wire() for _ in range(8)]
         pc_inc = [Wire() for _ in range(8)]
@@ -54,6 +45,7 @@ class Circuit:
         self.p_dec_gate = Adder8(p_out, min_one, Wire.zero(), p_dec, Wire())
 
         instruction = [Wire() for _ in range(8)]
+        data = [Wire() for _ in range(8)]
 
         is_fwd = Wire()
         is_bwd = Wire()
@@ -64,13 +56,21 @@ class Circuit:
         pc_next = [Wire() for _ in range(8)]
         p_next = [Wire() for _ in range(8)]
 
-        self.dec = Mux1x2Byte(
+        self.pc_calc = Mux1x2Byte(
             is_jmp, pc_inc, [Wire.zero()] * 3 + instruction[3:8], pc_next
         )
 
+        p_inter = [Wire() for _ in range(8)]
+        is_fwd_bwd = Wire()
+        self.is_fwd_bwd_gate = Or(is_fwd, is_bwd, is_fwd_bwd)
+
+        self.p_inter_calc = Mux1x2Byte(is_bwd, p_inc, p_dec, p_inter)
+        self.p_calc = Mux1x2Byte(is_fwd_bwd, p_out, p_inter, p_next)
+
         self.pc = Reg8(wire_clk, pc_next, pc_out)
-        self.p = Reg8(wire_clk, p_dec, p_out)
-        self.memory = RAM(Wire.zero(), pc_out, data, instruction)
+        self.p = Reg8(wire_clk, p_next, p_out)
+        self.rom = RAM(Wire.zero(), pc_out, zero, instruction)
+        self.ram = RAM(Wire.zero(), p_out, zero, data)
 
         self.is_fwd_check = Equals3(
             instruction[0:3], [Wire.zero(), Wire.zero(), Wire.zero()], is_fwd
@@ -89,7 +89,7 @@ class Circuit:
         )
 
         # Pre-fill memory
-        self.memory.fill([4 + (30 << 3) if i == 3 else 0 for i in range(256)])
+        self.rom.fill([0, 0, 1, 0, 1, 1, 1, 1, 0, 1] + [3 for i in range(250)])
 
     def update(self):
         self.pc.update()
@@ -97,13 +97,17 @@ class Circuit:
         self.inc.update()
         self.p_inc_gate.update()
         self.p_dec_gate.update()
-        self.memory.update()
+        self.rom.update()
+        self.ram.update()
         self.is_fwd_check.update()
         self.is_bwd_check.update()
         self.is_inc_check.update()
         self.is_dec_check.update()
         self.is_jmp_check.update()
-        self.dec.update()
+        self.pc_calc.update()
+        self.is_fwd_bwd_gate.update()
+        self.p_inter_calc.update()
+        self.p_calc.update()
 
 
 if __name__ == "__main__":
