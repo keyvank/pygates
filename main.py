@@ -25,9 +25,14 @@ class Mux1x2Byte:
 
 
 class Circuit:
+    def snapshot(self):
+        print("P:", self.p.snapshot())
+        print("PC:", self.pc.snapshot())
+
     def __init__(self, wire_clk, wires_out):
         data = [Wire.zero()] * 8
         one = [Wire.one()] + [Wire.zero()] * 7
+        min_one = [Wire.one()] * 8
 
         a_output = [Wire() for _ in range(8)]
         self.reg_a = Reg8(Wire.zero(), data, a_output)
@@ -42,53 +47,63 @@ class Circuit:
         pc_inc = [Wire() for _ in range(8)]
         self.inc = Adder8(pc_out, one, Wire.zero(), pc_inc, Wire())
 
+        p_out = [Wire() for _ in range(8)]
+        p_inc = [Wire() for _ in range(8)]
+        p_dec = [Wire() for _ in range(8)]
+        self.p_inc_gate = Adder8(p_out, one, Wire.zero(), p_inc, Wire())
+        self.p_dec_gate = Adder8(p_out, min_one, Wire.zero(), p_dec, Wire())
+
         instruction = [Wire() for _ in range(8)]
 
-        is_inst0 = Wire()
-        is_inst1 = Wire()
-        is_inst2 = Wire()
-        is_inst3 = Wire()
+        is_fwd = Wire()
+        is_bwd = Wire()
+        is_inc = Wire()
+        is_dec = Wire()
+        is_jmp = Wire()
 
         pc_next = [Wire() for _ in range(8)]
+        p_next = [Wire() for _ in range(8)]
 
-        self.inst3 = Mux1x2Byte(is_inst3, pc_inc, pc_out, pc_next)
+        self.dec = Mux1x2Byte(
+            is_jmp, pc_inc, [Wire.zero()] * 3 + instruction[3:8], pc_next
+        )
+
         self.pc = Reg8(wire_clk, pc_next, pc_out)
+        self.p = Reg8(wire_clk, p_dec, p_out)
         self.memory = RAM(Wire.zero(), pc_out, data, instruction)
 
-        self.is_inst0_check = Equals3(
-            instruction[0:3], [Wire.zero(), Wire.zero(), Wire.zero()], is_inst0
+        self.is_fwd_check = Equals3(
+            instruction[0:3], [Wire.zero(), Wire.zero(), Wire.zero()], is_fwd
         )
-        self.is_inst1_check = Equals3(
-            instruction[0:3], [Wire.one(), Wire.zero(), Wire.zero()], is_inst1
+        self.is_bwd_check = Equals3(
+            instruction[0:3], [Wire.one(), Wire.zero(), Wire.zero()], is_bwd
         )
-        self.is_inst2_check = Equals3(
-            instruction[0:3], [Wire.zero(), Wire.one(), Wire.zero()], is_inst2
+        self.is_inc_check = Equals3(
+            instruction[0:3], [Wire.zero(), Wire.one(), Wire.zero()], is_inc
         )
-        self.is_inst3_check = Equals3(
-            instruction[0:3], [Wire.one(), Wire.one(), Wire.zero()], is_inst3
+        self.is_dec_check = Equals3(
+            instruction[0:3], [Wire.one(), Wire.one(), Wire.zero()], is_dec
         )
-
-        self.conn0 = Connect(is_inst0, wires_out[0])
-        self.conn1 = Connect(is_inst1, wires_out[1])
-        self.conn2 = Connect(is_inst2, wires_out[2])
-        self.conn3 = Connect(is_inst3, wires_out[3])
+        self.is_jmp_check = Equals3(
+            instruction[0:3], [Wire.zero(), Wire.zero(), Wire.one()], is_jmp
+        )
 
         # Pre-fill memory
-        self.memory.fill([(i) % 256 for i in range(256)])
+        self.memory.fill([4 + (30 << 3) if i == 3 else 0 for i in range(256)])
 
     def update(self):
         self.pc.update()
+        self.p.update()
         self.inc.update()
+        self.p_inc_gate.update()
+        self.p_dec_gate.update()
         self.memory.update()
-        self.is_inst0_check.update()
-        self.is_inst1_check.update()
-        self.is_inst2_check.update()
-        self.is_inst3_check.update()
-        self.conn0.update()
-        self.conn1.update()
-        self.conn2.update()
-        self.conn3.update()
-        self.inst3.update()
+        self.is_fwd_check.update()
+        self.is_bwd_check.update()
+        self.is_inc_check.update()
+        self.is_dec_check.update()
+        self.is_jmp_check.update()
+        self.dec.update()
 
 
 if __name__ == "__main__":
@@ -106,5 +121,5 @@ if __name__ == "__main__":
         circuit.update()
         time.sleep(0.05)
 
-        print(clk.get(), [out.get() for out in outs])
+        circuit.snapshot()
         clk_val = not clk_val

@@ -17,6 +17,18 @@ class DLatch:
 
 
 class Reg8:
+    def snapshot(self):
+        val = 0
+        for i in range(8):
+            d = self.latches[i]._data
+            if d == ONE:
+                val += 2**i
+            elif d == ZERO:
+                pass
+            else:
+                raise Exception("Invalid data!")
+        return val
+
     def __init__(self, wire_enabled, wires_data, wires_out):
         self.latches = [
             DLatch(wire_enabled, wires_data[i], wires_out[i]) for i in range(8)
@@ -28,6 +40,12 @@ class Reg8:
 
 
 class RAM:
+    def snapshot(self):
+        cells = []
+        for i in range(256):
+            cells.append(self.regs[i].snapshot())
+        return cells
+
     def fill(self, data):
         for i in range(256):
             curr = data[i]
