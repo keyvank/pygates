@@ -108,7 +108,7 @@ class Circuit:
         )
 
         # Pre-fill memory
-        self.rom.fill(compile(">+>+>+>+>+>+>+>+>+>+>+[<]+"))
+        self.rom.fill(compile("+++>+++++<[>[->+>+<<]>[-<+>]<<-]"))
 
     def update(self):
         self.pc.update()
