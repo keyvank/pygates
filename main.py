@@ -70,7 +70,7 @@ class Circuit:
         self.is_jmp_not_zero_gate = And(is_jmp, is_data_not_zero, is_jmp_not_zero)
 
         self.pc_calc = Mux1x2Byte(
-            is_jmp_not_zero, pc_inc, instruction[3:8] + [Wire.zero()] * 3, pc_next
+            is_jmp_not_zero, pc_inc, instruction[1:8] + [Wire.zero()], pc_next
         )
 
         p_inter = [Wire() for _ in range(8)]
@@ -95,20 +95,18 @@ class Circuit:
             instruction[0:3], [Wire.zero(), Wire.zero(), Wire.zero()], is_fwd
         )
         self.is_bwd_check = Equals3(
-            instruction[0:3], [Wire.one(), Wire.zero(), Wire.zero()], is_bwd
+            instruction[0:3], [Wire.zero(), Wire.one(), Wire.zero()], is_bwd
         )
         self.is_inc_check = Equals3(
-            instruction[0:3], [Wire.zero(), Wire.one(), Wire.zero()], is_inc
+            instruction[0:3], [Wire.zero(), Wire.zero(), Wire.one()], is_inc
         )
         self.is_dec_check = Equals3(
-            instruction[0:3], [Wire.one(), Wire.one(), Wire.zero()], is_dec
+            instruction[0:3], [Wire.zero(), Wire.one(), Wire.one()], is_dec
         )
-        self.is_jmp_check = Equals3(
-            instruction[0:3], [Wire.zero(), Wire.zero(), Wire.one()], is_jmp
-        )
+        self.is_jmp_check = Equals(instruction[0], Wire.one(), is_jmp)
 
         # Pre-fill memory
-        self.rom.fill(compile("+++>+++++<[>[->+>+<<]>[-<+>]<<-]"))
+        self.rom.fill(compile("+>+[[->+>+<<]>[-<+>]<<[->>+>+<<<]>>[-<<+>>]>[-<+>]<]"))
 
     def update(self):
         self.pc.update()
@@ -145,15 +143,15 @@ def compile(bf):
         if c == ">":
             opcodes.append(0)
         elif c == "<":
-            opcodes.append(1)
-        elif c == "+":
             opcodes.append(2)
+        elif c == "+":
+            opcodes.append(4)
         elif c == "-":
-            opcodes.append(3)
+            opcodes.append(6)
         elif c == "[":
             locs.append(len(opcodes))
         elif c == "]":
-            opcodes.append(4 + (locs.pop() << 3))
+            opcodes.append(1 + (locs.pop() << 1))
 
     return opcodes + [0 for _ in range(256 - len(opcodes))]
 
