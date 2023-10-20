@@ -35,7 +35,9 @@ class Adder8:
     def __init__(
         self, circuit, wires_a, wires_b, wire_carry_in, wires_out, wire_carry_out
     ):
-        carries = [wire_carry_in] + [Wire() for _ in range(7)] + [wire_carry_out]
+        carries = (
+            [wire_carry_in] + [circuit.new_wire() for _ in range(7)] + [wire_carry_out]
+        )
 
         self.adders = [
             FullAdder(

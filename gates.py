@@ -14,7 +14,7 @@ class Not:
 
 class Nand:
     def __init__(self, circuit, wire_a, wire_b, wire_out):
-        inter = Wire()
+        inter = circuit.new_wire()
 
         self.p1 = PTransistor(circuit, wire_a, circuit.one(), wire_out)
         self.p2 = PTransistor(circuit, wire_b, circuit.one(), wire_out)
