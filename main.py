@@ -9,14 +9,20 @@ from mux import *
 from adder import *
 from cmp import *
 from memory import *
+from circuit import *
 
 
 class Mux1x2Byte:
-    def __init__(self, wire_select, wires_data_a, wires_data_b, wires_out):
+    def __init__(self, circuit, wire_select, wires_data_a, wires_data_b, wires_out):
         self.muxes = []
         for i in range(8):
             self.muxes.append(
-                Mux1x2([wire_select], [wires_data_a[i], wires_data_b[i]], wires_out[i])
+                Mux1x2(
+                    circuit,
+                    [wire_select],
+                    [wires_data_a[i], wires_data_b[i]],
+                    wires_out[i],
+                )
             )
 
     def update(self):
@@ -24,86 +30,120 @@ class Mux1x2Byte:
             mux.update()
 
 
-class Circuit:
+class CPU:
     def snapshot(self):
         print("P:", self.p.snapshot())
         print("PC:", self.pc.snapshot())
         print("RAM:", self.ram.snapshot())
 
-    def __init__(self, wire_clk, wires_out):
-        zero = [Wire.zero()] * 8
-        one = [Wire.one()] + [Wire.zero()] * 7
-        min_one = [Wire.one()] * 8
-        pc_out = [Wire() for _ in range(8)]
-        pc_inc = [Wire() for _ in range(8)]
-        p_out = [Wire() for _ in range(8)]
-        p_inc = [Wire() for _ in range(8)]
-        p_dec = [Wire() for _ in range(8)]
-        data = [Wire() for _ in range(8)]
-        data_inc = [Wire() for _ in range(8)]
-        data_dec = [Wire() for _ in range(8)]
-        is_data_zero = Wire()
-        is_data_not_zero = Wire()
-        instruction = [Wire() for _ in range(8)]
-        is_fwd = Wire()
-        is_bwd = Wire()
-        is_inc = Wire()
-        is_dec = Wire()
-        is_jmp = Wire()
-        pc_next = [Wire() for _ in range(8)]
-        p_next = [Wire() for _ in range(8)]
-        is_jmp_not_zero = Wire()
-        p_inter = [Wire() for _ in range(8)]
-        is_fwd_bwd = Wire()
-        is_wr = Wire()
-        data_next = [Wire() for _ in range(8)]
+    def __init__(self, circuit, wire_clk, wires_out):
+        zero = [circuit.zero()] * 8
+        one = [circuit.one()] + [circuit.zero()] * 7
+        min_one = [circuit.one()] * 8
+        pc_out = [circuit.new_wire() for _ in range(8)]
+        pc_inc = [circuit.new_wire() for _ in range(8)]
+        p_out = [circuit.new_wire() for _ in range(8)]
+        p_inc = [circuit.new_wire() for _ in range(8)]
+        p_dec = [circuit.new_wire() for _ in range(8)]
+        data = [circuit.new_wire() for _ in range(8)]
+        data_inc = [circuit.new_wire() for _ in range(8)]
+        data_dec = [circuit.new_wire() for _ in range(8)]
+        is_data_zero = circuit.new_wire()
+        is_data_not_zero = circuit.new_wire()
+        instruction = [circuit.new_wire() for _ in range(8)]
+        is_fwd = circuit.new_wire()
+        is_bwd = circuit.new_wire()
+        is_inc = circuit.new_wire()
+        is_dec = circuit.new_wire()
+        is_jmp = circuit.new_wire()
+        pc_next = [circuit.new_wire() for _ in range(8)]
+        p_next = [circuit.new_wire() for _ in range(8)]
+        is_jmp_not_zero = circuit.new_wire()
+        p_inter = [circuit.new_wire() for _ in range(8)]
+        is_fwd_bwd = circuit.new_wire()
+        is_wr = circuit.new_wire()
+        data_next = [circuit.new_wire() for _ in range(8)]
 
         self.gates = []
-        self.gates.append(Adder8(pc_out, one, Wire.zero(), pc_inc, Wire()))
-        self.gates.append(Adder8(p_out, one, Wire.zero(), p_inc, Wire()))
-        self.gates.append(Adder8(p_out, min_one, Wire.zero(), p_dec, Wire()))
-        self.gates.append(Adder8(data, one, Wire.zero(), data_inc, Wire()))
-        self.gates.append(Adder8(data, min_one, Wire.zero(), data_dec, Wire()))
-        self.gates.append(Equals8(data, zero, is_data_zero))
-        self.gates.append(Not(is_data_zero, is_data_not_zero))
-        self.gates.append(And(is_jmp, is_data_not_zero, is_jmp_not_zero))
+        self.gates.append(
+            Adder8(circuit, pc_out, one, circuit.zero(), pc_inc, circuit.new_wire())
+        )
+        self.gates.append(
+            Adder8(circuit, p_out, one, circuit.zero(), p_inc, circuit.new_wire())
+        )
+        self.gates.append(
+            Adder8(circuit, p_out, min_one, circuit.zero(), p_dec, circuit.new_wire())
+        )
+        self.gates.append(
+            Adder8(circuit, data, one, circuit.zero(), data_inc, circuit.new_wire())
+        )
+        self.gates.append(
+            Adder8(circuit, data, min_one, circuit.zero(), data_dec, circuit.new_wire())
+        )
+        self.gates.append(Equals8(circuit, data, zero, is_data_zero))
+        self.gates.append(Not(circuit, is_data_zero, is_data_not_zero))
+        self.gates.append(And(circuit, is_jmp, is_data_not_zero, is_jmp_not_zero))
         self.gates.append(
             Mux1x2Byte(
-                is_jmp_not_zero, pc_inc, instruction[1:8] + [Wire.zero()], pc_next
+                circuit,
+                is_jmp_not_zero,
+                pc_inc,
+                instruction[1:8] + [circuit.zero()],
+                pc_next,
             )
         )
 
-        self.gates.append(Or(is_fwd, is_bwd, is_fwd_bwd))
-        self.gates.append(Mux1x2Byte(is_bwd, p_inc, p_dec, p_inter))
-        self.gates.append(Mux1x2Byte(is_fwd_bwd, p_out, p_inter, p_next))
-        self.gates.append(Or(is_inc, is_dec, is_wr))
-        self.gates.append(Mux1x2Byte(is_dec, data_inc, data_dec, data_next))
+        self.gates.append(Or(circuit, is_fwd, is_bwd, is_fwd_bwd))
+        self.gates.append(Mux1x2Byte(circuit, is_bwd, p_inc, p_dec, p_inter))
+        self.gates.append(Mux1x2Byte(circuit, is_fwd_bwd, p_out, p_inter, p_next))
+        self.gates.append(Or(circuit, is_inc, is_dec, is_wr))
+        self.gates.append(Mux1x2Byte(circuit, is_dec, data_inc, data_dec, data_next))
 
-        self.pc = Reg8(wire_clk, pc_next, pc_out)
+        self.pc = Reg8(circuit, wire_clk, pc_next, pc_out)
         self.gates.append(self.pc)
 
-        self.p = Reg8(wire_clk, p_next, p_out)
+        self.p = Reg8(circuit, wire_clk, p_next, p_out)
         self.gates.append(self.p)
 
-        self.rom = RAM(wire_clk, Wire.zero(), pc_out, zero, instruction)
+        self.rom = RAM(circuit, wire_clk, circuit.zero(), pc_out, zero, instruction)
         self.gates.append(self.rom)
 
-        self.ram = RAM(wire_clk, is_wr, p_out, data_next, data)
+        self.ram = RAM(circuit, wire_clk, is_wr, p_out, data_next, data)
         self.gates.append(self.ram)
 
         self.gates.append(
-            Equals3(instruction[0:3], [Wire.zero(), Wire.zero(), Wire.zero()], is_fwd)
+            Equals3(
+                circuit,
+                instruction[0:3],
+                [circuit.zero(), circuit.zero(), circuit.zero()],
+                is_fwd,
+            )
         )
         self.gates.append(
-            Equals3(instruction[0:3], [Wire.zero(), Wire.one(), Wire.zero()], is_bwd)
+            Equals3(
+                circuit,
+                instruction[0:3],
+                [circuit.zero(), circuit.one(), circuit.zero()],
+                is_bwd,
+            )
         )
         self.gates.append(
-            Equals3(instruction[0:3], [Wire.zero(), Wire.zero(), Wire.one()], is_inc)
+            Equals3(
+                circuit,
+                instruction[0:3],
+                [circuit.zero(), circuit.zero(), circuit.one()],
+                is_inc,
+            )
         )
         self.gates.append(
-            Equals3(instruction[0:3], [Wire.zero(), Wire.one(), Wire.one()], is_dec)
+            Equals3(
+                circuit,
+                instruction[0:3],
+                [circuit.zero(), circuit.one(), circuit.one()],
+                is_dec,
+            )
         )
-        self.gates.append(Equals(instruction[0], Wire.one(), is_jmp))
+        self.gates.append(Equals(circuit, instruction[0], circuit.one(), is_jmp))
 
         # Pre-fill memory
         self.rom.fill(compile("+>+[[->+>+<<]>[-<+>]<<[->>+>+<<<]>>[-<<+>>]>[-<+>]<]"))
@@ -135,11 +175,12 @@ def compile(bf):
 
 
 if __name__ == "__main__":
-    clk = Wire()
+    circ = Circuit()
+    clk = circ.new_wire()
     clk_val = False
 
-    outs = [Wire() for _ in range(8)]
-    circuit = Circuit(clk, outs)
+    outs = [circ.new_wire() for _ in range(8)]
+    circuit = CPU(circ, clk, outs)
 
     while True:
         if clk_val:

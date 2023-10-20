@@ -4,7 +4,7 @@ from cmp import *
 
 
 class DLatch:
-    def __init__(self, wire_enabled, wire_data, wire_out):
+    def __init__(self, circuit, wire_enabled, wire_data, wire_out):
         self.wire_enabled = wire_enabled
         self.wire_data = wire_data
         self.wire_out = wire_out
@@ -18,7 +18,7 @@ class DLatch:
 
 
 class EdgeDetector:
-    def __init__(self, wire_in, wire_out):
+    def __init__(self, circuit, wire_in, wire_out):
         self.wire_in = wire_in
         self.wire_out = wire_out
         self.prev = None
@@ -35,10 +35,10 @@ class EdgeDetector:
 
 
 class DFlipFlop:
-    def __init__(self, wire_clk, wire_data, wire_out):
-        wire_enabled = Wire()
-        self.edge_detector = EdgeDetector(wire_clk, wire_enabled)
-        self.latch = DLatch(wire_clk, wire_data, wire_out)
+    def __init__(self, circuit, wire_clk, wire_data, wire_out):
+        wire_enabled = circuit.new_wire()
+        self.edge_detector = EdgeDetector(circuit, wire_clk, wire_enabled)
+        self.latch = DLatch(circuit, wire_clk, wire_data, wire_out)
 
     def update(self):
         self.edge_detector.update()
@@ -58,9 +58,9 @@ class Reg8:
                 return "X"
         return val
 
-    def __init__(self, wire_clk, wires_data, wires_out):
+    def __init__(self, circuit, wire_clk, wires_data, wires_out):
         self.latches = [
-            DFlipFlop(wire_clk, wires_data[i], wires_out[i]) for i in range(8)
+            DFlipFlop(circuit, wire_clk, wires_data[i], wires_out[i]) for i in range(8)
         ]
 
     def update(self):
@@ -85,7 +85,9 @@ class RAM:
                     self.regs[i].latches[j].latch._data = ONE
                 curr //= 2
 
-    def __init__(self, wire_clk, wire_write, wires_addr, wires_data, wires_out):
+    def __init__(
+        self, circuit, wire_clk, wire_write, wires_addr, wires_data, wires_out
+    ):
         self.regs = []
         self.sel_gates = []
         regs_outs = [list() for _ in range(8)]
@@ -93,25 +95,25 @@ class RAM:
             wires = []
             cell_addr = []
             for bit in range(8):
-                w = Wire()
+                w = circuit.new_wire()
                 wires.append(w)
                 regs_outs[bit].append(w)
                 if byte % 2 == 0:
-                    cell_addr.append(Wire.zero())
+                    cell_addr.append(circuit.zero())
                 else:
-                    cell_addr.append(Wire.one())
+                    cell_addr.append(circuit.one())
                 byte //= 2
-            is_sel = Wire()
-            is_wr = Wire()
-            is_wr_clk = Wire()
-            self.sel_gates.append(Equals8(wires_addr, cell_addr, is_sel))
-            self.sel_gates.append(And(is_sel, wire_write, is_wr))
-            self.sel_gates.append(And(is_wr, wire_clk, is_wr_clk))
-            self.regs.append(Reg8(is_wr_clk, wires_data, wires))
+            is_sel = circuit.new_wire()
+            is_wr = circuit.new_wire()
+            is_wr_clk = circuit.new_wire()
+            self.sel_gates.append(Equals8(circuit, wires_addr, cell_addr, is_sel))
+            self.sel_gates.append(And(circuit, is_sel, wire_write, is_wr))
+            self.sel_gates.append(And(circuit, is_wr, wire_clk, is_wr_clk))
+            self.regs.append(Reg8(circuit, is_wr_clk, wires_data, wires))
 
         self.muxes = []
         for i in range(8):
-            self.muxes.append(Mux8x256(wires_addr, regs_outs[i], wires_out[i]))
+            self.muxes.append(Mux8x256(circuit, wires_addr, regs_outs[i], wires_out[i]))
 
     def update(self):
         for sel in self.sel_gates:

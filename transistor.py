@@ -2,7 +2,7 @@ from wire import *
 
 
 class NTransistor:
-    def __init__(self, wire_base, wire_emitter, wire_collector):
+    def __init__(self, circuit, wire_base, wire_emitter, wire_collector):
         self.wire_base = wire_base
         self.wire_emitter = wire_emitter
         self.wire_collector = wire_collector
@@ -18,7 +18,7 @@ class NTransistor:
 
 
 class PTransistor:
-    def __init__(self, wire_base, wire_emitter, wire_collector):
+    def __init__(self, circuit, wire_base, wire_emitter, wire_collector):
         self.wire_base = wire_base
         self.wire_emitter = wire_emitter
         self.wire_collector = wire_collector

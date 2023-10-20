@@ -3,15 +3,15 @@ from gates import *
 
 
 class Mux1x2:
-    def __init__(self, wire_select, wires_data, wire_out):
-        wire_select_not = Wire()
-        and1_out = Wire()
-        and2_out = Wire()
+    def __init__(self, circuit, wire_select, wires_data, wire_out):
+        wire_select_not = circuit.new_wire()
+        and1_out = circuit.new_wire()
+        and2_out = circuit.new_wire()
 
-        self.sel_not_gate = Not(wire_select[0], wire_select_not)
-        self.and1_gate = And(wire_select_not, wires_data[0], and1_out)
-        self.and2_gate = And(wire_select[0], wires_data[1], and2_out)
-        self.or_gate = Or(and1_out, and2_out, wire_out)
+        self.sel_not_gate = Not(circuit, wire_select[0], wire_select_not)
+        self.and1_gate = And(circuit, wire_select_not, wires_data[0], and1_out)
+        self.and2_gate = And(circuit, wire_select[0], wires_data[1], and2_out)
+        self.or_gate = Or(circuit, and1_out, and2_out, wire_out)
 
     def update(self):
         self.sel_not_gate.update()
@@ -21,19 +21,25 @@ class Mux1x2:
 
 
 def Mux(name, bits, sub_mux):
-    def __init__(self, wires_select, wires_data, wire_out):
-        out_mux1 = Wire()
-        out_mux2 = Wire()
+    def __init__(self, circuit, wires_select, wires_data, wire_out):
+        out_mux1 = circuit.new_wire()
+        out_mux2 = circuit.new_wire()
 
         self.mux1 = sub_mux(
-            wires_select[0 : bits - 1], wires_data[0 : 2 ** (bits - 1)], out_mux1
+            circuit,
+            wires_select[0 : bits - 1],
+            wires_data[0 : 2 ** (bits - 1)],
+            out_mux1,
         )
         self.mux2 = sub_mux(
+            circuit,
             wires_select[0 : bits - 1],
             wires_data[2 ** (bits - 1) : 2**bits],
             out_mux2,
         )
-        self.mux = Mux1x2([wires_select[bits - 1]], [out_mux1, out_mux2], wire_out)
+        self.mux = Mux1x2(
+            circuit, [wires_select[bits - 1]], [out_mux1, out_mux2], wire_out
+        )
 
     def update(self):
         self.mux1.update()
