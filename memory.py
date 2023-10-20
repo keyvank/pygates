@@ -17,22 +17,50 @@ class DLatch:
         self.wire_out.put(self, self._data)
 
 
+class EdgeDetector:
+    def __init__(self, wire_in, wire_out):
+        self.wire_in = wire_in
+        self.wire_out = wire_out
+        self.prev = None
+
+    def update(self):
+        curr = self.wire_in.get()
+        if curr == FREE or curr == UNK:
+            self.wire_out.put(self, curr)
+        elif self.prev == ZERO and curr == ONE:
+            self.wire_out.put(self, ONE)
+        else:
+            self.wire_out.put(self, ZERO)
+        self.prev = curr
+
+
+class DFlipFlop:
+    def __init__(self, wire_clk, wire_data, wire_out):
+        wire_enabled = Wire()
+        self.edge_detector = EdgeDetector(wire_clk, wire_enabled)
+        self.latch = DLatch(wire_clk, wire_data, wire_out)
+
+    def update(self):
+        self.edge_detector.update()
+        self.latch.update()
+
+
 class Reg8:
     def snapshot(self):
         val = 0
         for i in range(8):
-            d = self.latches[i]._data
+            d = self.latches[i].latch._data
             if d == ONE:
                 val += 2**i
             elif d == ZERO:
                 pass
             else:
-                raise Exception("Invalid data!")
+                return "X"
         return val
 
-    def __init__(self, wire_enabled, wires_data, wires_out):
+    def __init__(self, wire_clk, wires_data, wires_out):
         self.latches = [
-            DLatch(wire_enabled, wires_data[i], wires_out[i]) for i in range(8)
+            DFlipFlop(wire_clk, wires_data[i], wires_out[i]) for i in range(8)
         ]
 
     def update(self):
@@ -52,9 +80,9 @@ class RAM:
             curr = data[i]
             for j in range(8):
                 if curr % 2 == 0:
-                    self.regs[i].latches[j]._data = ZERO
+                    self.regs[i].latches[j].latch._data = ZERO
                 else:
-                    self.regs[i].latches[j]._data = ONE
+                    self.regs[i].latches[j].latch._data = ONE
                 curr //= 2
 
     def __init__(self, wire_clk, wire_write, wires_addr, wires_data, wires_out):
