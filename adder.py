@@ -54,3 +54,35 @@ class Adder8:
     def update(self):
         for adder in self.adders:
             adder.update()
+
+
+def num_to_wires(num):
+    wires = []
+    for i in range(8):
+        bit = (num >> i) & 1
+        wires.append(Wire.one() if bit else Wire.zero())
+    return wires
+
+
+def wires_to_num(wires):
+    out = 0
+    for i, w in enumerate(wires):
+        if w.get() == ONE:
+            out += 2**i
+    return out
+
+
+if __name__ == "__main__":
+    circuit = Circuit()
+    for x in range(256):
+        for y in range(256):
+            wires_x = num_to_wires(x)
+            wires_y = num_to_wires(y)
+            wires_out = [Wire() for _ in range(8)]
+            adder = Adder8(
+                circuit, wires_x, wires_y, Wire.zero(), wires_out, Wire.zero()
+            )
+            adder.update()
+            out = wires_to_num(wires_out)
+            if out != (x + y) % 256:
+                print("Adder is not working!")
