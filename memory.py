@@ -34,15 +34,16 @@ class EdgeDetector:
         self.prev = curr
 
 
-class DFlipFlop:
-    def __init__(self, circuit, wire_clk, wire_data, wire_out):
-        wire_enabled = circuit.new_wire()
-        self.edge_detector = EdgeDetector(circuit, wire_clk, wire_enabled)
-        self.latch = DLatch(circuit, wire_clk, wire_data, wire_out)
-
-    def update(self):
-        self.edge_detector.update()
-        self.latch.update()
+def DFlipFlop(circuit, wire_clk, wire_data, wire_out):
+    not_data = circuit.new_wire()
+    Not(circuit, wire_data, not_data)
+    and_d_clk = circuit.new_wire()
+    And(circuit, wire_data, wire_clk, and_d_clk)
+    and_notd_clk = circuit.new_wire()
+    And(circuit, not_data, wire_clk, and_notd_clk)
+    neg_out = circuit.new_wire()
+    Nor(circuit, and_notd_clk, neg_out, wire_out)
+    Nor(circuit, and_d_clk, wire_out, neg_out)
 
 
 class Reg8:

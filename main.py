@@ -12,6 +12,23 @@ from memory import *
 from circuit import *
 
 
+circ = Circuit()
+clk = circ.new_wire()
+data = circ.new_wire()
+out = circ.new_wire()
+DFlipFlop(circ, clk, data, out)
+clk.put(0, ONE)
+data.put(0, ONE)
+
+while True:
+    circ.stabilize()
+    #print(circ._transistors.__len__())
+    print(out.get())
+    input()
+
+exit(0)
+
+
 class Mux1x2Byte:
     def __init__(self, circuit, wire_select, wires_data_a, wires_data_b, wires_out):
         self.muxes = []

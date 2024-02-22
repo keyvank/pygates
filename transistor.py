@@ -11,10 +11,8 @@ class NTransistor:
         b = self.wire_base.get()
         if b == ONE:
             self.wire_collector.put(self, self.wire_emitter.get())
-        elif b == ZERO:
+        elif b == ZERO or b == FREE or b == UNK:
             self.wire_collector.put(self, FREE)
-        else:
-            self.wire_collector.put(self, UNK)
 
 
 class PTransistor:
@@ -25,9 +23,7 @@ class PTransistor:
 
     def update(self):
         b = self.wire_base.get()
-        if b == ZERO:
+        if b == ZERO or b == FREE or b == UNK:
             self.wire_collector.put(self, self.wire_emitter.get())
         elif b == ONE:
             self.wire_collector.put(self, FREE)
-        else:
-            self.wire_collector.put(self, UNK)
