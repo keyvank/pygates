@@ -30,11 +30,7 @@ class Circuit:
 
     def update(self):
         for t in self._transistors:
-            if t.wire_base.get() == FREE or t.wire_emitter.get() == FREE:
-                t.wire_collector.put(t, ZERO)
-                pass
-            else:
-                t.update()
+            t.update()
 
     def stabilize(self):
         self.update()        
