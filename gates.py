@@ -22,26 +22,35 @@ def And(circuit, wire_in_a, wire_in_b, wire_out):
 
 
 def Or(circuit, wire_in_a, wire_in_b, wire_out):
-    not_a = circuit.new_wire()
-    not_b = circuit.new_wire()
-    Not(circuit, wire_in_a, not_a)
-    Not(circuit, wire_in_b, not_b)
-    Nand(circuit, not_a, not_b, wire_out)
+    not_out = circuit.new_wire()
+    Nor(circuit, wire_in_a, wire_in_b, not_out)
+    Not(circuit, not_out, wire_out)
 
 
-def Nor(circuit, wire_in_a, wire_in_b, wire_out):
-    or_ab = circuit.new_wire()
-    Or(circuit, wire_in_a, wire_in_b, or_ab)
-    Not(circuit, or_ab, wire_out)
+def Nor(circuit, wire_a, wire_b, wire_out):
+    inter = circuit.new_wire()
+    circuit.new_transistor(PTransistor(circuit, wire_a, circuit.one(), inter))
+    circuit.new_transistor(PTransistor(circuit, wire_b, inter, wire_out))
+    circuit.new_transistor(NTransistor(circuit, wire_a, circuit.zero(), wire_out))
+    circuit.new_transistor(NTransistor(circuit, wire_b, circuit.zero(), wire_out))
 
 
-def Xor(circuit, wire_in_a, wire_in_b, wire_out):
-    wire_not_a = circuit.new_wire()
-    wire_not_b = circuit.new_wire()
-    wire_a_and_not_b = circuit.new_wire()
-    wire_b_and_not_a = circuit.new_wire()
-    Not(circuit, wire_in_a, wire_not_a)
-    Not(circuit, wire_in_b, wire_not_b)
-    And(circuit, wire_in_a, wire_not_b, wire_a_and_not_b)
-    And(circuit, wire_in_b, wire_not_a, wire_b_and_not_a)
-    Or(circuit, wire_a_and_not_b, wire_b_and_not_a, wire_out)
+def Xor(circuit, wire_a, wire_b, wire_out):
+    a_not = circuit.new_wire()
+    b_not = circuit.new_wire()
+    Not(circuit, wire_a, a_not)
+    Not(circuit, wire_b, b_not)
+
+    inter1 = circuit.new_wire()
+    circuit.new_transistor(PTransistor(circuit, b_not, circuit.one(), inter1))
+    circuit.new_transistor(PTransistor(circuit, wire_a, inter1, wire_out))
+    inter2 = circuit.new_wire()
+    circuit.new_transistor(PTransistor(circuit, wire_b, circuit.one(), inter2))
+    circuit.new_transistor(PTransistor(circuit, a_not, inter2, wire_out))
+
+    inter3 = circuit.new_wire()
+    circuit.new_transistor(NTransistor(circuit, wire_b, circuit.zero(), inter3))
+    circuit.new_transistor(NTransistor(circuit, wire_a, inter3, wire_out))
+    inter4 = circuit.new_wire()
+    circuit.new_transistor(NTransistor(circuit, b_not, circuit.zero(), inter4))
+    circuit.new_transistor(NTransistor(circuit, a_not, inter4, wire_out))
