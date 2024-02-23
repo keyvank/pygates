@@ -18,21 +18,21 @@ class Circuit:
         w = Wire()
         self._wires.append(w)
         return w
-    
+
     def new_transistor(self, trans):
         self._transistors.append(trans)
 
-    def is_stable(self):
-        for w in self._wires:
-            if w.get() in [FREE, UNK]:
-                return False
-        return True
+    def snapshot(self):
+        return [w.get() for w in self._wires]
 
     def update(self):
         for t in self._transistors:
             t.update()
 
     def stabilize(self):
-        self.update()        
-        while not self.is_stable():
+        curr_snapshot = self.snapshot()
+        next_snapshot = None
+        while next_snapshot != curr_snapshot:
             self.update()
+            curr_snapshot = next_snapshot
+            next_snapshot = self.snapshot()

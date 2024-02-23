@@ -9,6 +9,10 @@ BATTERY = None
 class Wire:
     def __init__(self):
         self.values = {}
+        self._assume = FREE
+
+    def assume(self, val):
+        self._assume = val
 
     def one():
         w = Wire()
@@ -30,7 +34,7 @@ class Wire:
                     curr = b
                 elif b != curr:
                     return UNK
-        return curr
+        return curr if curr != FREE else self._assume
 
     def put(self, gate, value):
         self.values[gate] = value

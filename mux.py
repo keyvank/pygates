@@ -29,9 +29,7 @@ def Mux(bits, sub_mux):
             wires_data[2 ** (bits - 1) : 2**bits],
             out_mux2,
         )
-        Mux1x2(
-            circuit, [wires_select[bits - 1]], [out_mux1, out_mux2], wire_out
-        )
+        Mux1x2(circuit, [wires_select[bits - 1]], [out_mux1, out_mux2], wire_out)
 
     return f
 

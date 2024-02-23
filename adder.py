@@ -7,6 +7,7 @@ def HalfAdder(circuit, wire_a, wire_b, wire_out, wire_carry_out):
     Xor(circuit, wire_a, wire_b, wire_out)
     And(circuit, wire_a, wire_b, wire_carry_out)
 
+
 def FullAdder(circuit, wire_a, wire_b, wire_carry_in, wire_out, wire_carry_out):
     wire_ab = circuit.new_wire()
     wire_c1 = circuit.new_wire()
@@ -57,9 +58,7 @@ if __name__ == "__main__":
             wires_x = num_to_wires(x)
             wires_y = num_to_wires(y)
             wires_out = [Wire() for _ in range(8)]
-            Adder8(
-                circuit, wires_x, wires_y, Wire.zero(), wires_out, Wire.zero()
-            )
+            Adder8(circuit, wires_x, wires_y, Wire.zero(), wires_out, Wire.zero())
             circuit.update()
             out = wires_to_num(wires_out)
             if out != (x + y) % 256:

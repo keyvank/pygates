@@ -3,38 +3,7 @@ from mux import *
 from cmp import *
 
 
-class DLatch:
-    def __init__(self, circuit, wire_enabled, wire_data, wire_out):
-        self.wire_enabled = wire_enabled
-        self.wire_data = wire_data
-        self.wire_out = wire_out
-        self._data = ZERO
-
-    def update(self):
-        en = self.wire_enabled.get()
-        if en == ONE:
-            self._data = self.wire_data.get()
-        self.wire_out.put(self, self._data)
-
-
-class EdgeDetector:
-    def __init__(self, circuit, wire_in, wire_out):
-        self.wire_in = wire_in
-        self.wire_out = wire_out
-        self.prev = None
-
-    def update(self):
-        curr = self.wire_in.get()
-        if curr == FREE or curr == UNK:
-            self.wire_out.put(self, curr)
-        elif self.prev == ZERO and curr == ONE:
-            self.wire_out.put(self, ONE)
-        else:
-            self.wire_out.put(self, ZERO)
-        self.prev = curr
-
-
-def DFlipFlop(circuit, wire_clk, wire_data, wire_out):
+def DLatch(circuit, wire_clk, wire_data, wire_out):
     not_data = circuit.new_wire()
     Not(circuit, wire_data, not_data)
     and_d_clk = circuit.new_wire()
@@ -44,13 +13,22 @@ def DFlipFlop(circuit, wire_clk, wire_data, wire_out):
     neg_out = circuit.new_wire()
     Nor(circuit, and_notd_clk, neg_out, wire_out)
     Nor(circuit, and_d_clk, wire_out, neg_out)
+    neg_out.assume(ONE)
+
+
+def DFlipFlop(circuit, wire_clk, wire_data, wire_out):
+    neg_clk = circuit.new_wire()
+    Not(circuit, wire_clk, neg_clk)
+    inter = circuit.new_wire()
+    DLatch(circuit, wire_clk, wire_data, inter)
+    DLatch(circuit, neg_clk, inter, wire_out)
 
 
 class Reg8:
     def snapshot(self):
         val = 0
         for i in range(8):
-            d = self.latches[i].latch._data
+            d = self.wires_out[i]
             if d == ONE:
                 val += 2**i
             elif d == ZERO:
@@ -60,13 +38,9 @@ class Reg8:
         return val
 
     def __init__(self, circuit, wire_clk, wires_data, wires_out):
-        self.latches = [
-            DFlipFlop(circuit, wire_clk, wires_data[i], wires_out[i]) for i in range(8)
-        ]
-
-    def update(self):
-        for latch in self.latches:
-            latch.update()
+        self.wires_out = wires_out
+        for i in range(8):
+            DFlipFlop(circuit, wire_clk, wires_data[i], wires_out[i])
 
 
 class RAM:
