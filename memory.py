@@ -3,7 +3,7 @@ from mux import *
 from cmp import *
 
 
-def DLatch(circuit, wire_clk, wire_data, wire_out):
+def DLatch(circuit, wire_clk, wire_data, wire_out, initial):
     not_data = circuit.new_wire()
     Not(circuit, wire_data, not_data)
     and_d_clk = circuit.new_wire()
@@ -13,22 +13,23 @@ def DLatch(circuit, wire_clk, wire_data, wire_out):
     neg_out = circuit.new_wire()
     Nor(circuit, and_notd_clk, neg_out, wire_out)
     Nor(circuit, and_d_clk, wire_out, neg_out)
-    neg_out.assume(ONE)
+    neg_out.assume(ZERO if initial == ONE else ONE)
+    wire_out.assume(initial)
 
 
-def DFlipFlop(circuit, wire_clk, wire_data, wire_out):
+def DFlipFlop(circuit, wire_clk, wire_data, wire_out, initial):
     neg_clk = circuit.new_wire()
     Not(circuit, wire_clk, neg_clk)
     inter = circuit.new_wire()
-    DLatch(circuit, wire_clk, wire_data, inter)
-    DLatch(circuit, neg_clk, inter, wire_out)
+    DLatch(circuit, wire_clk, wire_data, inter, initial)
+    DLatch(circuit, neg_clk, inter, wire_out, initial)
 
 
 class Reg8:
     def snapshot(self):
         val = 0
         for i in range(8):
-            d = self.wires_out[i]
+            d = self.wires_out[i].get()
             if d == ONE:
                 val += 2**i
             elif d == ZERO:
@@ -37,10 +38,17 @@ class Reg8:
                 return "X"
         return val
 
-    def __init__(self, circuit, wire_clk, wires_data, wires_out):
+    def __init__(self, circuit, wire_clk, wires_data, wires_out, initial):
         self.wires_out = wires_out
         for i in range(8):
-            DFlipFlop(circuit, wire_clk, wires_data[i], wires_out[i])
+            DFlipFlop(
+                circuit,
+                wire_clk,
+                wires_data[i],
+                wires_out[i],
+                ZERO if initial % 2 == 0 else ONE,
+            )
+            initial //= 2
 
 
 class RAM:
@@ -50,25 +58,15 @@ class RAM:
             cells.append(self.regs[i].snapshot())
         return cells
 
-    def fill(self, data):
-        for i in range(256):
-            curr = data[i]
-            for j in range(8):
-                if curr % 2 == 0:
-                    self.regs[i].latches[j].latch._data = ZERO
-                else:
-                    self.regs[i].latches[j].latch._data = ONE
-                curr //= 2
-
     def __init__(
-        self, circuit, wire_clk, wire_write, wires_addr, wires_data, wires_out
+        self, circuit, wire_clk, wire_write, wires_addr, wires_data, wires_out, initial
     ):
         self.regs = []
-        self.sel_gates = []
         regs_outs = [list() for _ in range(8)]
-        for byte in range(256):
+        for i in range(256):
             wires = []
             cell_addr = []
+            byte = i
             for bit in range(8):
                 w = circuit.new_wire()
                 wires.append(w)
@@ -81,19 +79,10 @@ class RAM:
             is_sel = circuit.new_wire()
             is_wr = circuit.new_wire()
             is_wr_clk = circuit.new_wire()
-            self.sel_gates.append(Equals8(circuit, wires_addr, cell_addr, is_sel))
-            self.sel_gates.append(And(circuit, is_sel, wire_write, is_wr))
-            self.sel_gates.append(And(circuit, is_wr, wire_clk, is_wr_clk))
-            self.regs.append(Reg8(circuit, is_wr_clk, wires_data, wires))
+            Equals8(circuit, wires_addr, cell_addr, is_sel)
+            And(circuit, is_sel, wire_write, is_wr)
+            And(circuit, is_wr, wire_clk, is_wr_clk)
+            self.regs.append(Reg8(circuit, is_wr_clk, wires_data, wires, initial[i]))
 
-        self.muxes = []
         for i in range(8):
-            self.muxes.append(Mux8x256(circuit, wires_addr, regs_outs[i], wires_out[i]))
-
-    def update(self):
-        for sel in self.sel_gates:
-            sel.update()
-        for reg in self.regs:
-            reg.update()
-        for mux in self.muxes:
-            mux.update()
+            Mux8x256(circuit, wires_addr, regs_outs[i], wires_out[i])
