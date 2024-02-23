@@ -27,7 +27,6 @@ class CPU:
         print("P:", self.p.snapshot())
         print("PC:", self.pc.snapshot())
         print("RAM:", self.ram.snapshot())
-        print("ROM:", self.rom.snapshot())
 
     def __init__(self, circuit, wire_clk, wires_out):
         zero = [circuit.zero()] * 8
@@ -145,18 +144,17 @@ def compile(bf):
 if __name__ == "__main__":
     circ = Circuit()
     clk = circ.new_wire()
+    clk.put(BATTERY, ZERO)
     clk_val = False
 
     outs = [circ.new_wire() for _ in range(8)]
     cpu = CPU(circ, clk, outs)
     print(circ._transistors.__len__())
     while True:
+        circ.stabilize()
         cpu.snapshot()
         if clk_val:
             clk.put(BATTERY, ONE)
         else:
             clk.put(BATTERY, ZERO)
-        circ.stabilize()
-        cpu.snapshot()
         clk_val = not clk_val
-        input()

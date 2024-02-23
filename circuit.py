@@ -27,7 +27,8 @@ class Circuit:
 
     def update(self):
         for t in self._transistors:
-            t.update()
+            if t.wire_base.get() != FREE:
+                t.update()
 
     def stabilize(self):
         curr_snapshot = self.snapshot()
