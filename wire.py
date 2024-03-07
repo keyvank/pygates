@@ -38,3 +38,4 @@ class Wire:
 
     def put(self, gate, value):
         self.values[gate] = value
+        self.value = self.get()

@@ -22,7 +22,7 @@ def Adder8(circuit, wires_a, wires_b, wire_carry_in, wires_out, wire_carry_out):
         [wire_carry_in] + [circuit.new_wire() for _ in range(7)] + [wire_carry_out]
     )
 
-    [
+    for i in range(8):
         FullAdder(
             circuit,
             wires_a[i],
@@ -31,8 +31,6 @@ def Adder8(circuit, wires_a, wires_b, wire_carry_in, wires_out, wire_carry_out):
             wires_out[i],
             carries[i + 1],
         )
-        for i in range(8)
-    ]
 
 
 def num_to_wires(num):

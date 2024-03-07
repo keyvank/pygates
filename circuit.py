@@ -31,9 +31,12 @@ class Circuit:
                 t.update()
 
     def stabilize(self):
-        curr_snapshot = self.snapshot()
-        next_snapshot = None
-        while next_snapshot != curr_snapshot:
-            self.update()
-            curr_snapshot = next_snapshot
-            next_snapshot = self.snapshot()
+        self.update()
+        self.update()
+        # self.update()
+        # curr_snapshot = self.snapshot()
+        # next_snapshot = None
+        # while next_snapshot != curr_snapshot:
+        #    self.update()
+        #    curr_snapshot = next_snapshot
+        #    next_snapshot = self.snapshot()

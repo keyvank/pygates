@@ -11,6 +11,17 @@ from cmp import *
 from memory import *
 from circuit import *
 
+c = Circuit()
+a = Wire.zero()
+b = Wire.zero()
+o = c.new_wire()
+Xor(c, a, b, o)
+c.update()
+print(o.get())
+# exit(0)
+# print(c._transistors.__len__())
+# exit(0)
+
 
 def Mux1x2Byte(circuit, wire_select, wires_data_a, wires_data_b, wires_out):
     for i in range(8):
