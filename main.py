@@ -33,6 +33,41 @@ def Mux1x2Byte(circuit, wire_select, wires_data_a, wires_data_b, wires_out):
         )
 
 
+class ProgramCounter:
+    def snapshot(self):
+        print("Program Counter:", self.pc.snapshot())
+
+    def __init__(self, circuit, wire_clk, wires_out):
+        one = [circuit.one()] + [circuit.zero()] * 7
+        pc_out = [circuit.new_wire() for _ in range(8)]
+        self.pc_inc = [circuit.new_wire() for _ in range(8)]
+        Adder8(circuit, pc_out, one, circuit.zero(), self.pc_inc, circuit.new_wire())
+        self.pc = Reg8(circuit, wire_clk, self.pc_inc, pc_out, 0)
+
+
+class ProgramReader:
+    def snapshot(self):
+        print("Program Counter:", self.pc.snapshot())
+        print("Instruction:", [w.get() for w in self.instruction])
+
+    def __init__(self, circuit, wire_clk, wires_out):
+        one = [circuit.one()] + [circuit.zero()] * 7
+        pc_out = [circuit.new_wire() for _ in range(8)]
+        self.instruction = [circuit.new_wire() for _ in range(8)]
+        self.pc_inc = [circuit.new_wire() for _ in range(8)]
+        Adder8(circuit, pc_out, one, circuit.zero(), self.pc_inc, circuit.new_wire())
+        self.pc = Reg8(circuit, wire_clk, self.pc_inc, pc_out, 0)
+        self.rom = RAM(
+            circuit,
+            wire_clk,
+            circuit.zero(),
+            pc_out,
+            [circuit.zero()] * 8,
+            self.instruction,
+            [i * 2 for i in range(256)],
+        )
+
+
 class CPU:
     def snapshot(self):
         print("P:", self.p.snapshot())
@@ -159,7 +194,7 @@ if __name__ == "__main__":
     clk_val = False
 
     outs = [circ.new_wire() for _ in range(8)]
-    cpu = CPU(circ, clk, outs)
+    cpu = ProgramReader(circ, clk, outs)
     print(circ._transistors.__len__())
     while True:
         circ.stabilize()
