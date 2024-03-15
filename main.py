@@ -127,7 +127,7 @@ class CPU:
         self.pc = Reg8(circuit, wire_clk, pc_next, pc_out, 0)
         self.p = Reg8(circuit, wire_clk, p_next, p_out, 0)
 
-        self.rom = RAM(
+        self.rom = FastRAM(
             circuit,
             wire_clk,
             circuit.zero(),
@@ -136,7 +136,7 @@ class CPU:
             instruction,
             compile("+>+[[->+>+<<]>[-<+>]<<[->>+>+<<<]>>[-<<+>>]>[-<+>]<]"),
         )
-        self.ram = RAM(
+        self.ram = FastRAM(
             circuit, wire_clk, is_wr, p_out, data_next, data, [0 for _ in range(256)]
         )
         Equals3(
@@ -194,7 +194,7 @@ if __name__ == "__main__":
     clk_val = False
 
     outs = [circ.new_wire() for _ in range(8)]
-    cpu = ProgramReader(circ, clk, outs)
+    cpu = CPU(circ, clk, outs)
     print(circ._transistors.__len__())
     while True:
         circ.stabilize()
