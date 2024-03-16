@@ -85,7 +85,7 @@ class FastRAM:
         self.wires_out = wires_out
         self.data = initial
         self.clk_is_up = False
-        circuit.new_transistor(self)
+        circuit.add_component(self)
 
     def update(self):
         clk = self.wire_clk.get()
