@@ -27,15 +27,8 @@ class Circuit:
 
     def update(self):
         for t in self._transistors:
-            if t.is_ready():
-                t.update()
+            t.update()
 
     def stabilize(self):
         self.update()
         self.update()
-        # curr_snapshot = self.snapshot()
-        # next_snapshot = None
-        # while next_snapshot != curr_snapshot:
-        #    self.update()
-        #    curr_snapshot = next_snapshot
-        #    next_snapshot = self.snapshot()

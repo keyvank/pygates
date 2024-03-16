@@ -194,7 +194,7 @@ if __name__ == "__main__":
     clk_val = False
 
     outs = [circ.new_wire() for _ in range(8)]
-    cpu = ProgramReader(circ, clk, outs)
+    cpu = CPU(circ, clk, outs)
     print(circ._transistors.__len__())
     while True:
         circ.stabilize()

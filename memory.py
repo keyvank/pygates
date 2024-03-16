@@ -53,6 +53,7 @@ class RAM:
     ):
         self.regs = []
         reg_outs = [[circuit.new_wire() for _ in range(8)] for _ in range(256)]
+
         for i in range(256):
             is_sel = circuit.new_wire()
             MultiEquals(circuit, wires_addr, num_to_wires(i), is_sel)
@@ -84,20 +85,9 @@ class FastRAM:
         self.wires_out = wires_out
         self.data = initial
         self.clk_is_up = False
-
         circuit.new_transistor(self)
 
-    def is_ready(self):
-        return True
-
     def update(self):
-        def wires_to_num(wires):
-            out = 0
-            for i, w in enumerate(wires):
-                if w.get() == ONE:
-                    out += 2**i
-            return out
-
         clk = self.wire_clk.get()
         addr = wires_to_num(self.wires_addr)
         data = wires_to_num(self.wires_data)
@@ -110,6 +100,7 @@ class FastRAM:
             self.clk_is_up = True
 
         value = self.data[addr]
-        wires = []
         for i in range(8):
             self.wires_out[i].put(self, ONE if (value >> i) & 1 else ZERO)
+
+        return True
