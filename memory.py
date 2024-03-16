@@ -86,3 +86,48 @@ class RAM:
 
         for i in range(8):
             Mux8x256(circuit, wires_addr, regs_outs[i], wires_out[i])
+
+
+class FastRAM:
+    def snapshot(self):
+        return self.data
+
+    def __init__(
+        self, circuit, wire_clk, wire_write, wires_addr, wires_data, wires_out, initial
+    ):
+        self.wire_clk = wire_clk
+        self.wire_write = wire_write
+        self.wires_addr = wires_addr
+        self.wires_data = wires_data
+        self.wires_out = wires_out
+        self.data = initial
+        self.clk_is_up = False
+
+        circuit.new_transistor(self)
+
+    def is_ready(self):
+        return True
+
+    def update(self):
+        def wires_to_num(wires):
+            out = 0
+            for i, w in enumerate(wires):
+                if w.get() == ONE:
+                    out += 2**i
+            return out
+
+        clk = self.wire_clk.get()
+        addr = wires_to_num(self.wires_addr)
+        data = wires_to_num(self.wires_data)
+        if clk == ZERO and self.clk_is_up:
+            wr = self.wire_write.get()
+            if wr == ONE:
+                self.data[addr] = data
+            self.clk_is_up = False
+        elif clk == ONE:
+            self.clk_is_up = True
+
+        value = self.data[addr]
+        wires = []
+        for i in range(8):
+            self.wires_out[i].put(self, ONE if (value >> i) & 1 else ZERO)

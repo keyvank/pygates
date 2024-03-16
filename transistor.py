@@ -7,6 +7,9 @@ class NTransistor:
         self.wire_emitter = wire_emitter
         self.wire_collector = wire_collector
 
+    def is_ready(self):
+        return self.wire_base.get() != FREE
+
     def update(self):
         b = self.wire_base.get()
         if b == ONE:
@@ -22,6 +25,9 @@ class PTransistor:
         self.wire_base = wire_base
         self.wire_emitter = wire_emitter
         self.wire_collector = wire_collector
+
+    def is_ready(self):
+        return self.wire_base.get() != FREE
 
     def update(self):
         b = self.wire_base.get()
