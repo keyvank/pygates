@@ -56,7 +56,7 @@ class RAM:
 
         for i in range(256):
             is_sel = circuit.new_wire()
-            MultiEquals(circuit, wires_addr, num_to_wires(i), is_sel)
+            MultiEquals(circuit, wires_addr, num_to_wires(circuit, i), is_sel)
             is_wr = circuit.new_wire()
             And(circuit, is_sel, wire_write, is_wr)
             is_wr_and_clk = circuit.new_wire()

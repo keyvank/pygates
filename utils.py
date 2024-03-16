@@ -1,11 +1,11 @@
 from wire import Wire, ONE
 
 
-def num_to_wires(num):
+def num_to_wires(circuit, num):
     wires = []
     for i in range(8):
         bit = (num >> i) & 1
-        wires.append(Wire.one() if bit else Wire.zero())
+        wires.append(circuit.one() if bit else circuit.zero())
     return wires
 
 

@@ -8,10 +8,10 @@ if __name__ == "__main__":
     for x in range(256):
         for y in range(256):
             circuit = Circuit()
-            wires_x = num_to_wires(x)
-            wires_y = num_to_wires(y)
+            wires_x = num_to_wires(circuit, x)
+            wires_y = num_to_wires(circuit, y)
             wires_out = [Wire() for _ in range(8)]
-            Adder8(circuit, wires_x, wires_y, Wire.zero(), wires_out, Wire.zero())
+            Adder8(circuit, wires_x, wires_y, circuit.zero(), wires_out, circuit.zero())
             circuit.update()
             out = wires_to_num(wires_out)
             if out != (x + y) % 256:

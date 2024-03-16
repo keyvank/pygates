@@ -1,9 +1,9 @@
-from memory import FastRAM
+from memory import RAM
 from .assembler import compile
 
 
 def InstructionMemory(circuit, wire_clk, inst_pointer, inst, code):
-    return FastRAM(
+    return RAM(
         circuit,
         wire_clk,
         circuit.zero(),
