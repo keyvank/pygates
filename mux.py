@@ -41,3 +41,13 @@ Mux5x32 = Mux(5, Mux4x16)
 Mux6x64 = Mux(6, Mux5x32)
 Mux7x128 = Mux(7, Mux6x64)
 Mux8x256 = Mux(8, Mux7x128)
+
+
+def Mux1x2Byte(circuit, wire_select, wires_data_a, wires_data_b, wires_out):
+    for i in range(8):
+        Mux1x2(
+            circuit,
+            [wire_select],
+            [wires_data_a[i], wires_data_b[i]],
+            wires_out[i],
+        )
