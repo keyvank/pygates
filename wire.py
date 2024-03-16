@@ -25,4 +25,6 @@ class Wire:
         return curr if curr != FREE else self._assume
 
     def put(self, driver, value):
+        is_changed = self._drivers.get(driver) != value
         self._drivers[driver] = value
+        return is_changed

@@ -103,4 +103,4 @@ class FastRAM:
         for i in range(8):
             self.wires_out[i].put(self, ONE if (value >> i) & 1 else ZERO)
 
-        return True
+        return False

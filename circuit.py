@@ -28,13 +28,12 @@ class Circuit:
     def num_components(self):
         return len(self._comps)
 
-    def snapshot(self):
-        return [w.get() for w in self._wires]
-
     def update(self):
+        has_changes = False
         for t in self._comps:
-            t.update()
+            has_changes = has_changes | t.update()
+        return has_changes
 
     def stabilize(self):
-        self.update()
-        self.update()
+        while self.update():
+            pass
