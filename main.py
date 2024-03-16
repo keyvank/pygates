@@ -107,7 +107,7 @@ class CPU:
         Adder8(circuit, p_out, min_one, circuit.zero(), p_dec, circuit.new_wire())
         Adder8(circuit, data, one, circuit.zero(), data_inc, circuit.new_wire())
         Adder8(circuit, data, min_one, circuit.zero(), data_dec, circuit.new_wire())
-        Equals8(circuit, data, zero, is_data_zero)
+        MultiEquals(circuit, data, zero, is_data_zero)
         Not(circuit, is_data_zero, is_data_not_zero)
         And(circuit, is_jmp, is_data_not_zero, is_jmp_not_zero)
         Mux1x2Byte(
@@ -127,7 +127,7 @@ class CPU:
         self.pc = Reg8(circuit, wire_clk, pc_next, pc_out, 0)
         self.p = Reg8(circuit, wire_clk, p_next, p_out, 0)
 
-        self.rom = FastRAM(
+        self.rom = RAM(
             circuit,
             wire_clk,
             circuit.zero(),
@@ -136,28 +136,28 @@ class CPU:
             instruction,
             compile("+>+[[->+>+<<]>[-<+>]<<[->>+>+<<<]>>[-<<+>>]>[-<+>]<]"),
         )
-        self.ram = FastRAM(
+        self.ram = RAM(
             circuit, wire_clk, is_wr, p_out, data_next, data, [0 for _ in range(256)]
         )
-        Equals3(
+        MultiEquals(
             circuit,
             instruction[0:3],
             [circuit.zero(), circuit.zero(), circuit.zero()],
             is_fwd,
         )
-        Equals3(
+        MultiEquals(
             circuit,
             instruction[0:3],
             [circuit.zero(), circuit.one(), circuit.zero()],
             is_bwd,
         )
-        Equals3(
+        MultiEquals(
             circuit,
             instruction[0:3],
             [circuit.zero(), circuit.zero(), circuit.one()],
             is_inc,
         )
-        Equals3(
+        MultiEquals(
             circuit,
             instruction[0:3],
             [circuit.zero(), circuit.one(), circuit.one()],
@@ -194,7 +194,7 @@ if __name__ == "__main__":
     clk_val = False
 
     outs = [circ.new_wire() for _ in range(8)]
-    cpu = CPU(circ, clk, outs)
+    cpu = ProgramReader(circ, clk, outs)
     print(circ._transistors.__len__())
     while True:
         circ.stabilize()

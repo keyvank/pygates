@@ -1,7 +1,7 @@
 FREE = "Z"
 UNK = "X"
-ZERO = "0"
-ONE = "1"
+ZERO = 0
+ONE = 1
 
 BATTERY = None
 

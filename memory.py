@@ -1,6 +1,7 @@
 from wire import *
 from mux import *
 from cmp import *
+from utils import wires_to_num, num_to_wires
 
 
 def DLatch(circuit, wire_clk, wire_data, wire_out, initial):
@@ -13,7 +14,8 @@ def DLatch(circuit, wire_clk, wire_data, wire_out, initial):
     neg_out = circuit.new_wire()
     Nor(circuit, and_notd_clk, neg_out, wire_out)
     Nor(circuit, and_d_clk, wire_out, neg_out)
-    neg_out.assume(ZERO if initial == ONE else ONE)
+
+    neg_out.assume(1 - initial)
     wire_out.assume(initial)
 
 
@@ -27,16 +29,7 @@ def DFlipFlop(circuit, wire_clk, wire_data, wire_out, initial):
 
 class Reg8:
     def snapshot(self):
-        val = 0
-        for i in range(8):
-            d = self.wires_out[i].get()
-            if d == ONE:
-                val += 2**i
-            elif d == ZERO:
-                pass
-            else:
-                return "X"
-        return val
+        return wires_to_num(self.wires_out)
 
     def __init__(self, circuit, wire_clk, wires_data, wires_out, initial):
         self.wires_out = wires_out
@@ -53,39 +46,28 @@ class Reg8:
 
 class RAM:
     def snapshot(self):
-        cells = []
-        for i in range(256):
-            cells.append(self.regs[i].snapshot())
-        return cells
+        return [self.regs[i].snapshot() for i in range(256)]
 
     def __init__(
         self, circuit, wire_clk, wire_write, wires_addr, wires_data, wires_out, initial
     ):
         self.regs = []
-        regs_outs = [list() for _ in range(8)]
+        reg_outs = [[circuit.new_wire() for _ in range(8)] for _ in range(256)]
         for i in range(256):
-            wires = []
-            cell_addr = []
-            byte = i
-            for bit in range(8):
-                w = circuit.new_wire()
-                wires.append(w)
-                regs_outs[bit].append(w)
-                if byte % 2 == 0:
-                    cell_addr.append(circuit.zero())
-                else:
-                    cell_addr.append(circuit.one())
-                byte //= 2
             is_sel = circuit.new_wire()
+            MultiEquals(circuit, wires_addr, num_to_wires(i), is_sel)
             is_wr = circuit.new_wire()
-            is_wr_clk = circuit.new_wire()
-            Equals8(circuit, wires_addr, cell_addr, is_sel)
             And(circuit, is_sel, wire_write, is_wr)
-            And(circuit, is_wr, wire_clk, is_wr_clk)
-            self.regs.append(Reg8(circuit, is_wr_clk, wires_data, wires, initial[i]))
+            is_wr_and_clk = circuit.new_wire()
+            And(circuit, is_wr, wire_clk, is_wr_and_clk)
+            self.regs.append(
+                Reg8(circuit, is_wr_and_clk, wires_data, reg_outs[i], initial[i])
+            )
 
         for i in range(8):
-            Mux8x256(circuit, wires_addr, regs_outs[i], wires_out[i])
+            Mux8x256(
+                circuit, wires_addr, [reg_outs[j][i] for j in range(256)], wires_out[i]
+            )
 
 
 class FastRAM:
