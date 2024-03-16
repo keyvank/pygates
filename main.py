@@ -12,18 +12,13 @@ if __name__ == "__main__":
     OSCILLATOR = "OSCILLATOR"
 
     clk.put(OSCILLATOR, ZERO)
-    clk_val = False
 
     code = "+>+[[->+>+<<]>[-<+>]<<[->>+>+<<<]>>[-<<+>>]>[-<+>]<]"
 
     cpu = CPU(circ, clk, code)
-
     print("Num components:", circ.num_components())
+
     while True:
         circ.stabilize()
         cpu.snapshot()
-        if clk_val:
-            clk.put(OSCILLATOR, ONE)
-        else:
-            clk.put(OSCILLATOR, ZERO)
-        clk_val = not clk_val
+        clk.put(OSCILLATOR, 1 - clk.get())
