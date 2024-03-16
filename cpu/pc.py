@@ -1,11 +1,8 @@
-from wire import *
-from transistor import *
-from gates import *
-from mux import *
-from adder import *
-from cmp import *
-from memory import *
-from circuit import *
+from gates import And, Not
+from mux import Mux1x2Byte
+from adder import Adder8
+from cmp import MultiEquals
+from memory import Reg8
 
 
 def PC(circuit, wire_clk, is_jmp, data, wires_addr, pc_out):

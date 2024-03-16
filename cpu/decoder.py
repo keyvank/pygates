@@ -1,11 +1,4 @@
-from wire import *
-from transistor import *
-from gates import *
-from mux import *
-from adder import *
-from cmp import *
-from memory import *
-from circuit import *
+from cmp import Equals, MultiEquals
 
 
 def Decoder(circuit, instruction, is_fwd, is_bwd, is_inc, is_dec, is_jmp):

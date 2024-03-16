@@ -1,11 +1,7 @@
-from wire import *
-from transistor import *
-from gates import *
-from mux import *
-from adder import *
-from cmp import *
-from memory import *
-from circuit import *
+from gates import Or
+from mux import Mux1x2Byte
+from adder import Adder8
+from memory import Reg8
 
 
 def P(circuit, wire_clk, is_fwd, is_bwd, p_out):

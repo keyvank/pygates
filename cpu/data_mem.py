@@ -1,11 +1,7 @@
-from wire import *
-from transistor import *
-from gates import *
-from mux import *
-from adder import *
-from cmp import *
-from memory import *
-from circuit import *
+from gates import Or
+from adder import Adder8
+from memory import FastRAM
+from mux import Mux1x2Byte
 
 
 def DataMemory(circuit, wire_clk, addr, is_inc, is_dec, data_out):
