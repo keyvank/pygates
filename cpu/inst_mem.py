@@ -2,13 +2,13 @@ from memory import FastRAM
 from .assembler import compile
 
 
-def InstructionMemory(circuit, wire_clk, inst_pointer, inst, code):
+def InstructionMemory(circuit, in_clk, in_inst_pointer, out_inst, code=""):
     return FastRAM(
         circuit,
-        wire_clk,
+        in_clk,
         circuit.zero(),
-        inst_pointer,
+        in_inst_pointer,
         [circuit.zero()] * 8,
-        inst,
+        out_inst,
         compile(code),
     )

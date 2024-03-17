@@ -3,30 +3,28 @@ from gates import *
 from circuit import Circuit
 
 
-def HalfAdder(circuit, wire_a, wire_b, wire_out, wire_carry_out):
-    Xor(circuit, wire_a, wire_b, wire_out)
-    And(circuit, wire_a, wire_b, wire_carry_out)
+def HalfAdder(circuit, in_a, in_b, out_sum, out_carry):
+    Xor(circuit, in_a, in_b, out_sum)
+    And(circuit, in_a, in_b, out_carry)
 
 
-def FullAdder(circuit, wire_a, wire_b, wire_carry_in, wire_out, wire_carry_out):
-    wire_ab = circuit.new_wire()
-    wire_c1 = circuit.new_wire()
-    wire_c2 = circuit.new_wire()
-    HalfAdder(circuit, wire_a, wire_b, wire_ab, wire_c1)
-    HalfAdder(circuit, wire_ab, wire_carry_in, wire_out, wire_c2)
-    Or(circuit, wire_c1, wire_c2, wire_carry_out)
+def FullAdder(circuit, in_a, in_b, in_carry, out_sum, out_carry):
+    sum_ab = circuit.new_wire()
+    carry1 = circuit.new_wire()
+    carry2 = circuit.new_wire()
+    HalfAdder(circuit, in_a, in_b, sum_ab, carry1)
+    HalfAdder(circuit, sum_ab, in_carry, out_sum, carry2)
+    Or(circuit, carry1, carry2, out_carry)
 
 
-def Adder8(circuit, wires_a, wires_b, wire_carry_in, wires_out, wire_carry_out):
-    carries = (
-        [wire_carry_in] + [circuit.new_wire() for _ in range(7)] + [wire_carry_out]
-    )
+def Adder8(circuit, in_a, in_b, in_carry, out_sum, out_carry):
+    carries = [in_carry] + [circuit.new_wire() for _ in range(7)] + [out_carry]
     for i in range(8):
         FullAdder(
             circuit,
-            wires_a[i],
-            wires_b[i],
+            in_a[i],
+            in_b[i],
             carries[i],
-            wires_out[i],
+            out_sum[i],
             carries[i + 1],
         )

@@ -11,6 +11,8 @@ def compile(bf):
             opcodes.append(4)
         elif c == "-":
             opcodes.append(6)
+        elif c == ".":
+            opcodes.append(8)
         elif c == "[":
             locs.append(len(opcodes))
         elif c == "]":

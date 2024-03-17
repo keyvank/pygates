@@ -4,20 +4,20 @@ from memory import FastRAM
 from mux import Mux1x2Byte
 
 
-def DataMemory(circuit, wire_clk, addr, is_inc, is_dec, data_out):
+def DataMemory(circuit, in_clk, in_addr, in_is_inc, in_is_dec, out_data):
     one = [circuit.one()] + [circuit.zero()] * 7
     min_one = [circuit.one()] * 8
 
     is_wr = circuit.new_wire()
-    Or(circuit, is_inc, is_dec, is_wr)
+    Or(circuit, in_is_inc, in_is_dec, is_wr)
 
     data_inc = [circuit.new_wire() for _ in range(8)]
     data_dec = [circuit.new_wire() for _ in range(8)]
-    Adder8(circuit, data_out, one, circuit.zero(), data_inc, circuit.new_wire())
-    Adder8(circuit, data_out, min_one, circuit.zero(), data_dec, circuit.new_wire())
+    Adder8(circuit, out_data, one, circuit.zero(), data_inc, circuit.new_wire())
+    Adder8(circuit, out_data, min_one, circuit.zero(), data_dec, circuit.new_wire())
     data_next = [circuit.new_wire() for _ in range(8)]
-    Mux1x2Byte(circuit, is_dec, data_inc, data_dec, data_next)
+    Mux1x2Byte(circuit, in_is_dec, data_inc, data_dec, data_next)
 
     return FastRAM(
-        circuit, wire_clk, is_wr, addr, data_next, data_out, [0 for _ in range(256)]
+        circuit, in_clk, is_wr, in_addr, data_next, out_data, [0 for _ in range(256)]
     )
