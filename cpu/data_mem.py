@@ -1,6 +1,6 @@
 from gates import Or
 from adder import Adder8
-from memory import RAM
+from memory import FastRAM
 from mux import Mux1x2Byte
 
 
@@ -18,6 +18,6 @@ def DataMemory(circuit, wire_clk, addr, is_inc, is_dec, data_out):
     data_next = [circuit.new_wire() for _ in range(8)]
     Mux1x2Byte(circuit, is_dec, data_inc, data_dec, data_next)
 
-    return RAM(
+    return FastRAM(
         circuit, wire_clk, is_wr, addr, data_next, data_out, [0 for _ in range(256)]
     )

@@ -5,10 +5,11 @@ from cmp import MultiEquals
 from memory import Reg8
 
 
-def PC(circuit, wire_clk, is_jmp, data, wires_addr, pc_out):
+def InstructionPointer(circuit, wire_clk, is_jmp, data, wires_addr, inst_pointer):
     zero = [circuit.zero()] * 8
     one = [circuit.one()] + [circuit.zero()] * 7
 
+    # should_jump = Data[DataPointer] != 0 && is_jmp
     is_data_zero = circuit.new_wire()
     is_data_not_zero = circuit.new_wire()
     should_jump = circuit.new_wire()
@@ -16,14 +17,18 @@ def PC(circuit, wire_clk, is_jmp, data, wires_addr, pc_out):
     Not(circuit, is_data_zero, is_data_not_zero)
     And(circuit, is_jmp, is_data_not_zero, should_jump)
 
-    pc_inc = [circuit.new_wire() for _ in range(8)]
-    pc_next = [circuit.new_wire() for _ in range(8)]
-    Adder8(circuit, pc_out, one, circuit.zero(), pc_inc, circuit.new_wire())
+    # InstPointer = should_jump ? wires_addr : InstPointer + 1
+    inst_pointer_inc = [circuit.new_wire() for _ in range(8)]
+    inst_pointer_next = [circuit.new_wire() for _ in range(8)]
+    Adder8(
+        circuit, inst_pointer, one, circuit.zero(), inst_pointer_inc, circuit.new_wire()
+    )
     Mux1x2Byte(
         circuit,
         should_jump,
-        pc_inc,
+        inst_pointer_inc,
         wires_addr + [circuit.zero()],
-        pc_next,
+        inst_pointer_next,
     )
-    return Reg8(circuit, wire_clk, pc_next, pc_out, 0)
+
+    return Reg8(circuit, wire_clk, inst_pointer_next, inst_pointer, 0)
